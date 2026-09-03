@@ -129,6 +129,31 @@
   .gap { align-self: center; font-size: 13px; color: var(--muted); padding: 2px 0 2px 22px; }
   .gap.tight { color: var(--warn); font-weight: 600; }
 
+
+  /* Calendar */
+  .cal { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .month { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; }
+  .month h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
+  .month h3 small { font-weight: 500; color: var(--muted); font-size: 12px; }
+  .dow { display: grid; grid-template-columns: repeat(7, 1fr); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; text-align: center; margin-bottom: 4px; }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 40px; row-gap: 2px; }
+  .day { position: relative; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; padding: 2px 0 0 4px; border-top: 1px solid var(--line); }
+  .day.pad { border-top-color: transparent; }
+  .day.today { color: var(--accent); font-weight: 700; }
+  .day.today::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; background: var(--accent); }
+  .day.past { color: var(--muted); }
+  .bar { position: absolute; left: 0; right: 0; bottom: 4px; height: 16px; background: var(--good-soft); border-top: 2px solid var(--good); }
+  .bar.in { left: 50%; border-radius: 6px 0 0 6px; }
+  .bar.out { right: 50%; border-radius: 0 6px 6px 0; }
+  .bar.in.out { left: 50%; right: auto; width: 0; border: 0; }
+  .bar.off { background: var(--bad-soft); border-top-color: var(--bad); opacity: .7; }
+  .bar.pend { background: var(--warn-soft); border-top-color: var(--warn); }
+  .bar .nm { position: absolute; left: 6px; top: 0; line-height: 14px; font-size: 11px; font-weight: 600; color: var(--ink); white-space: nowrap; pointer-events: none; z-index: 1; }
+  .day.cut .bar.in { border-radius: 6px 0 0 6px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+  .legend i { display: inline-block; width: 14px; height: 8px; border-top: 2px solid var(--good); background: var(--good-soft); border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+  .legend i.off { border-top-color: var(--bad); background: var(--bad-soft); }
+
   details summary { cursor: pointer; list-style: none; }
   details summary::-webkit-details-marker { display: none; }
   details summary h2::before { content: "▸"; margin-right: 6px; }
@@ -167,6 +192,12 @@
   <div id="notice" hidden></div>
 
   <div class="stats" id="stats"></div>
+
+  <section>
+    <h2>Calendar <span class="count" id="cCal">0</span></h2>
+    <div class="legend"><span><i></i>Confirmed stay</span><span><i class="off"></i>Declined / cancelled (when shown)</span><span>Half cells mark check-in (right) and check-out (left) days</span></div>
+    <div class="cal" id="cal"></div>
+  </section>
 
   <section>
     <h2>In house now <span class="count" id="cInhouse">0</span></h2>
@@ -295,6 +326,48 @@
     return `<div class="gap ${tight ? "tight" : ""}">${esc(txt)}</div>`;
   }
 
+
+  // ---- Calendar ------------------------------------------------------------
+  const MONTHS_AHEAD = 4;
+  function renderCalendar(rs, todayKey) {
+    const spans = rs.map(r => ({ r, ci: dayKey(new Date(r.check_in)), co: dayKey(new Date(r.check_out)),
+      name: [r.guest?.first_name, r.guest?.last_name].filter(Boolean).join(" ") || "Guest",
+      cls: !isLive(r) ? "off" : ((r.reservation_status?.current?.category === "request") ? "pend" : "") }));
+    const [ty, tm] = todayKey.split("-").map(Number);
+    let html = "", shown = 0;
+    for (let m = 0; m < MONTHS_AHEAD; m++) {
+      const y = ty + Math.floor((tm - 1 + m) / 12), mo = ((tm - 1 + m) % 12) + 1;
+      const first = new Date(Date.UTC(y, mo - 1, 1));
+      const daysIn = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+      const startDow = (first.getUTCDay() + 6) % 7; // Monday first
+      const label = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(first);
+      let nights = 0, cells = "";
+      for (let i = 0; i < startDow; i++) cells += `<div class="day pad"></div>`;
+      for (let d = 1; d <= daysIn; d++) {
+        const key = `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const dow = (startDow + d - 1) % 7;
+        const stay = spans.find(s => s.ci <= key && key < s.co);
+        const leaving = spans.find(s => s.co === key);
+        let bars = "";
+        if (leaving) bars += `<div class="bar out ${leaving.cls}"></div>`;
+        if (stay) {
+          const starts = stay.ci === key;
+          const showName = (starts && dow !== 6) || dow === 0 || d === 1;
+          if (stay.cls !== "off") nights++;
+          bars += `<div class="bar ${starts ? "in" : ""} ${stay.cls}" title="${esc(stay.name)} · ${esc(stay.ci)} → ${esc(stay.co)}">${showName ? `<span class="nm">${esc(stay.name.split(" ")[0])}</span>` : ""}</div>`;
+        }
+        const state = key === todayKey ? "today" : key < todayKey ? "past" : "";
+        cells += `<div class="day ${state}">${d}${bars}</div>`;
+      }
+      shown += nights;
+      html += `<div class="month"><h3>${esc(label)} <small>${nights ? plural(nights, "booked night") : "no bookings"}</small></h3>
+        <div class="dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+        <div class="days">${cells}</div></div>`;
+    }
+    $("cal").innerHTML = html;
+    $("cCal").textContent = plural(shown, "night");
+  }
+
   // ---- Render --------------------------------------------------------------
   function render(data, fetchedAt) {
     const showAll = $("showAll").checked;
@@ -333,6 +406,8 @@
       <div class="stat depart"><div class="label">Leaving today</div><div class="val">${departing.length}</div><div class="who">${esc(departing.map(nameOf).join(", ") || "Nobody leaving")}</div></div>
       <div class="stat inhouse"><div class="label">In house</div><div class="val">${inhouse.length ? inhouse.reduce((s, r) => s + (r.guests?.total || 0), 0) : 0} <small>guests</small></div><div class="who">${esc(inhouse.map(nameOf).join(", ") || "Apartment empty")}</div></div>
       <div class="stat"><div class="label">Next arrival</div><div class="val">${nextArrival ? esc(fmtDate(nextArrival.check_in, { day: "numeric", month: "short" })) : "—"}</div><div class="who">${nextArrival ? esc(nameOf(nextArrival)) + ` · ${plural(n30, "arrival")} in next 30 days` : "Nothing booked ahead"}</div></div>`;
+
+    renderCalendar(rs, todayKey);
 
     const fill = (id, list, cls, gaps) => {
       const el = $(id);
