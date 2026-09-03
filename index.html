@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#edf1f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e171c" media="(prefers-color-scheme: dark)">
 <title>Sliema Guest Board</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
@@ -52,6 +54,8 @@
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
   a { color: var(--accent); }
   .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
@@ -63,7 +67,7 @@
   h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 30px; line-height: 1.1; margin: 4px 0 0; text-wrap: balance; }
   .sub { color: var(--ink-2); margin-top: 6px; }
   .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  button { font: inherit; cursor: pointer; }
+  button { font: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   .btn { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; }
   .btn:hover { filter: brightness(1.05); }
   .btn[disabled] { opacity: .6; cursor: default; }
@@ -77,7 +81,7 @@
   .notice code { font-family: "JetBrains Mono", monospace; font-size: 13px; }
 
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
   .stat .label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   .stat .val { font-size: 26px; font-weight: 700; line-height: 1.2; margin-top: 4px; font-variant-numeric: tabular-nums; }
   .stat .val small { font-size: 14px; font-weight: 500; color: var(--ink-2); }
@@ -103,6 +107,7 @@
   .stay.s-off .stripe { background: var(--bad); }
   .stay.s-off { opacity: .7; }
   .body { display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; padding: 14px 16px; align-items: start; }
+  .body > div { min-width: 0; }
   .avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--surface-2); border: 1px solid var(--line); }
   .avatar.ph { display: grid; place-items: center; font-weight: 700; color: var(--accent); font-size: 18px; }
   .name { font-size: 18px; font-weight: 700; line-height: 1.25; }
@@ -132,7 +137,7 @@
 
   /* Calendar */
   .cal { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-  .month { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; }
+  .month { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; overflow: hidden; }
   .month h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
   .month h3 small { font-weight: 500; color: var(--muted); font-size: 12px; }
   .dow { display: grid; grid-template-columns: repeat(7, 1fr); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; text-align: center; margin-bottom: 4px; }
@@ -162,10 +167,21 @@
   footer { margin-top: 40px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
 
   @media (max-width: 720px) {
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .body { grid-template-columns: 44px 1fr; }
+    .wrap { padding: 16px 14px 48px; padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+    header.top { flex-direction: column; align-items: stretch; }
+    .controls { justify-content: space-between; }
+    .btn { padding: 10px 18px; min-height: 44px; }
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat { padding: 12px 14px; }
+    .stat .val { font-size: 22px; }
+    .body { grid-template-columns: 44px 1fr; gap: 12px; padding: 12px 14px; }
     .avatar { width: 44px; height: 44px; }
-    .contact { grid-column: 2; align-items: flex-start; text-align: left; }
+    .name { font-size: 16px; }
+    .dates { max-width: none; }
+    .contact { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 16px; text-align: left; margin-top: 2px; }
+    .contact a { padding: 6px 0; }
+    .gap { padding-left: 14px; }
+    .days { grid-auto-rows: 36px; }
     h1 { font-size: 26px; }
   }
   @media (prefers-reduced-motion: no-preference) {
