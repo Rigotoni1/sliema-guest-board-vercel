@@ -131,7 +131,7 @@
 
 
   /* Calendar */
-  .cal { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .cal { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
   .month { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; }
   .month h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
   .month h3 small { font-weight: 500; color: var(--muted); font-size: 12px; }
@@ -328,7 +328,7 @@
 
 
   // ---- Calendar ------------------------------------------------------------
-  const MONTHS_AHEAD = 4;
+  const MONTHS_AHEAD = 3;
   function renderCalendar(rs, todayKey) {
     const spans = rs.map(r => ({ r, ci: dayKey(new Date(r.check_in)), co: dayKey(new Date(r.check_out)),
       name: [r.guest?.first_name, r.guest?.last_name].filter(Boolean).join(" ") || "Guest",
