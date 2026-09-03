@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sliema Guest Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #edf1f3;
+    --surface: #ffffff;
+    --surface-2: #f5f7f8;
+    --line: #d5dde1;
+    --ink: #16232b;
+    --ink-2: #4b5a63;
+    --muted: #7b8a93;
+    --accent: #0f7b8a;
+    --accent-ink: #ffffff;
+    --accent-soft: #d9eef1;
+    --good: #2f8f5b;
+    --good-soft: #dcf1e4;
+    --warn: #c47a12;
+    --warn-soft: #f8e9d2;
+    --bad: #b8433f;
+    --bad-soft: #f6dcdb;
+    --shadow: 0 1px 2px rgba(22,35,43,.06), 0 6px 20px rgba(22,35,43,.06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e171c; --surface: #16232a; --surface-2: #1c2b33; --line: #2b3b44;
+      --ink: #e6edf0; --ink-2: #b4c1c8; --muted: #7f909a;
+      --accent: #3fb3c2; --accent-ink: #0b1519; --accent-soft: #163c43;
+      --good: #4fbf82; --good-soft: #163b2a; --warn: #e0a24a; --warn-soft: #3d2d13;
+      --bad: #e0716c; --bad-soft: #3f1f1e;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e171c; --surface: #16232a; --surface-2: #1c2b33; --line: #2b3b44;
+    --ink: #e6edf0; --ink-2: #b4c1c8; --muted: #7f909a;
+    --accent: #3fb3c2; --accent-ink: #0b1519; --accent-soft: #163c43;
+    --good: #4fbf82; --good-soft: #163b2a; --warn: #e0a24a; --warn-soft: #3d2d13;
+    --bad: #e0716c; --bad-soft: #3f1f1e;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  header.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 30px; line-height: 1.1; margin: 4px 0 0; text-wrap: balance; }
+  .sub { color: var(--ink-2); margin-top: 6px; }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  button { font: inherit; cursor: pointer; }
+  .btn { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; }
+  .btn:hover { filter: brightness(1.05); }
+  .btn[disabled] { opacity: .6; cursor: default; }
+  .btn:focus-visible, .toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 14px; cursor: pointer; }
+  .toggle input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+  .fresh { font-size: 13px; color: var(--muted); }
+
+  .notice { background: var(--warn-soft); color: var(--ink); border-left: 4px solid var(--warn); padding: 12px 14px; border-radius: 8px; margin-bottom: 20px; }
+  .notice.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .notice code { font-family: "JetBrains Mono", monospace; font-size: 13px; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .stat .label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .stat .val { font-size: 26px; font-weight: 700; line-height: 1.2; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat .val small { font-size: 14px; font-weight: 500; color: var(--ink-2); }
+  .stat .who { font-size: 13px; color: var(--ink-2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stat.arrive .val { color: var(--accent); }
+  .stat.depart .val { color: var(--warn); }
+  .stat.inhouse .val { color: var(--good); }
+
+  section { margin-bottom: 32px; }
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+  h2 .count { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); border-radius: 999px; padding: 0 8px; font-size: 12px; letter-spacing: 0; }
+  .empty { color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 10px; padding: 18px; text-align: center; }
+
+  .stays { display: flex; flex-direction: column; gap: 10px; }
+  .stay {
+    display: grid; grid-template-columns: 6px 1fr; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  }
+  .stay.hero { box-shadow: var(--shadow); }
+  .stripe { background: var(--line); }
+  .stay.s-inhouse .stripe { background: var(--good); }
+  .stay.s-today .stripe { background: var(--accent); }
+  .stay.s-leaving .stripe { background: var(--warn); }
+  .stay.s-off .stripe { background: var(--bad); }
+  .stay.s-off { opacity: .7; }
+  .body { display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; padding: 14px 16px; align-items: start; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--surface-2); border: 1px solid var(--line); }
+  .avatar.ph { display: grid; place-items: center; font-weight: 700; color: var(--accent); font-size: 18px; }
+  .name { font-size: 18px; font-weight: 700; line-height: 1.25; }
+  .name .loc { font-weight: 400; color: var(--muted); font-size: 14px; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .pill { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); }
+  .pill.good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .pill.accent { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+  .dates { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px 12px; align-items: center; margin-top: 12px; max-width: 420px; }
+  .d .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .d .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .d .v small { font-weight: 500; color: var(--ink-2); }
+  .arrow { color: var(--muted); font-size: 13px; text-align: center; white-space: nowrap; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 14px; color: var(--ink-2); }
+  .meta .mono { font-size: 13px; }
+  .contact { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; text-align: right; }
+  .contact a { text-decoration: none; font-weight: 600; font-size: 14px; }
+  .contact .wa { font-size: 13px; color: var(--good); }
+  .contact .none { color: var(--muted); font-size: 13px; }
+  .notes { margin-top: 10px; background: var(--warn-soft); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+  .notes b { color: var(--warn); }
+  .gap { align-self: center; font-size: 13px; color: var(--muted); padding: 2px 0 2px 22px; }
+  .gap.tight { color: var(--warn); font-weight: 600; }
+
+  details summary { cursor: pointer; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary h2::before { content: "▸"; margin-right: 6px; }
+  details[open] summary h2::before { content: "▾"; }
+
+  footer { margin-top: 40px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .body { grid-template-columns: 44px 1fr; }
+    .avatar { width: 44px; height: 44px; }
+    .contact { grid-column: 2; align-items: flex-start; text-align: left; }
+    h1 { font-size: 26px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .stay { transition: transform .15s ease; }
+  }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="propLabel">Quiet Sliema 2BR · Flat 10, Milner Street</div>
+      <h1>Sliema Guest Board</h1>
+      <div class="sub" id="today"></div>
+    </div>
+    <div class="controls">
+      <label class="toggle"><input type="checkbox" id="showAll"><span>Show declined &amp; cancelled</span></label>
+      <span class="fresh" id="fresh">Loading…</span>
+      <button class="btn" id="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <div id="notice" hidden></div>
+
+  <div class="stats" id="stats"></div>
+
+  <section>
+    <h2>In house now <span class="count" id="cInhouse">0</span></h2>
+    <div class="stays" id="inhouse"></div>
+  </section>
+
+  <section>
+    <h2>Upcoming <span class="count" id="cUpcoming">0</span></h2>
+    <div class="stays" id="upcoming"></div>
+  </section>
+
+  <details>
+    <summary><h2>Past stays <span class="count" id="cPast">0</span></h2></summary>
+    <div class="stays" id="past" style="margin-top:10px"></div>
+  </details>
+
+  <footer>
+    Times are local to the property (Europe/Malta). Check-in from <span id="ciTime">16:00</span>, check-out by <span id="coTime">11:00</span>. Data comes live from Hospitable and covers 60 days back to 240 days ahead.
+  </footer>
+</div>
+
+<script>
+(() => {
+  // ---- Configuration -------------------------------------------------------
+  // The Hospitable token lives in the Vercel environment (HOSPITABLE_TOKEN),
+  // never in this page. /api/data proxies the request server-side.
+  const TOKEN = "proxy";
+  const SNAPSHOT = null;
+  const PASS_KEY = "sliema-guest-board-pass";
+  const TZ = "Europe/Malta";
+  const DAYS_BACK = 60, DAYS_AHEAD = 240;
+  const CACHE_KEY = "sliema-guest-board-v1";
+
+  // ---- Helpers -------------------------------------------------------------
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const fmtDate = (iso, opts) => new Intl.DateTimeFormat("en-GB", { timeZone: TZ, ...opts }).format(new Date(iso));
+  const dayKey = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  const isoDate = (d) => d.toISOString().slice(0, 10);
+  const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+  function partyText(g) {
+    if (!g) return "";
+    const parts = [plural(g.adult_count || 0, "adult")];
+    if (g.child_count) parts.push(plural(g.child_count, "child").replace("childs", "children"));
+    if (g.infant_count) parts.push(plural(g.infant_count, "infant"));
+    if (g.pet_count) parts.push(plural(g.pet_count, "pet"));
+    return parts.join(", ");
+  }
+  function statusPill(r) {
+    const cat = r.reservation_status?.current?.category || r.status || "";
+    const sub = r.reservation_status?.current?.sub_category;
+    if (cat === "accepted") return `<span class="pill good">Confirmed</span>`;
+    if (cat === "cancelled") return `<span class="pill bad">Cancelled</span>`;
+    if (cat === "not accepted") return `<span class="pill bad">${esc(sub === "declined" ? "Declined" : "Not accepted")}</span>`;
+    if (cat === "request") return `<span class="pill warn">Request pending</span>`;
+    return `<span class="pill">${esc(cat)}</span>`;
+  }
+  const isLive = (r) => (r.reservation_status?.current?.category || r.status) === "accepted";
+
+  function phoneLinks(guest) {
+    const phones = (guest?.phone_numbers || []).filter(Boolean);
+    const email = guest?.email;
+    let out = "";
+    for (const p of phones) {
+      const digits = String(p).replace(/\D/g, "");
+      out += `<a class="mono" href="tel:+${digits}">+${esc(digits)}</a><a class="wa" href="https://wa.me/${digits}" target="_blank" rel="noopener">WhatsApp ↗</a>`;
+    }
+    if (email) out += `<a href="mailto:${esc(email)}">${esc(email)}</a>`;
+    if (!out) out = `<span class="none">No phone or email shared</span>`;
+    return out;
+  }
+
+  function stayCard(r, todayKey, cls, hero) {
+    const g = r.guest || {};
+    const name = [g.first_name, g.last_name].filter(Boolean).join(" ").trim() || "Guest";
+    const initials = name.split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+    const ciKey = dayKey(new Date(r.check_in)), coKey = dayKey(new Date(r.check_out));
+    const state = !isLive(r) ? "s-off" : (ciKey === todayKey ? "s-today" : coKey === todayKey ? "s-leaving" : cls);
+    const avatar = g.profile_picture
+      ? `<img class="avatar" src="${esc(g.profile_picture)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'avatar ph',textContent:'${esc(initials)}'}))">`
+      : `<div class="avatar ph">${esc(initials)}</div>`;
+    const timing = [];
+    if (isLive(r)) {
+      if (ciKey === todayKey) timing.push(`<span class="pill accent">Arrives today</span>`);
+      else if (coKey === todayKey) timing.push(`<span class="pill warn">Leaves today</span>`);
+      else if (state === "s-inhouse") timing.push(`<span class="pill good">In house</span>`);
+    }
+    return `
+      <article class="stay ${state} ${hero ? "hero" : ""}">
+        <div class="stripe"></div>
+        <div class="body">
+          ${avatar}
+          <div>
+            <div class="name">${esc(name)} ${g.location ? `<span class="loc">· ${esc(g.location)}</span>` : ""}</div>
+            <div class="pills">${timing.join("")}${statusPill(r)}
+              <span class="pill">${esc(partyText(r.guests))}</span>
+              <span class="pill">${esc(plural(r.nights, "night"))}</span>
+              <span class="pill">${esc(r.platform === "airbnb" ? "Airbnb" : r.platform || "Direct")}</span>
+            </div>
+            <div class="dates">
+              <div class="d"><div class="k">Check-in</div><div class="v">${esc(fmtDate(r.check_in, { weekday: "short", day: "numeric", month: "short" }))} <small>${esc(fmtDate(r.check_in, { hour: "2-digit", minute: "2-digit", hour12: false }))}</small></div></div>
+              <div class="arrow">→</div>
+              <div class="d"><div class="k">Check-out</div><div class="v">${esc(fmtDate(r.check_out, { weekday: "short", day: "numeric", month: "short" }))} <small>${esc(fmtDate(r.check_out, { hour: "2-digit", minute: "2-digit", hour12: false }))}</small></div></div>
+            </div>
+            <div class="meta">
+              <span>Code <span class="mono">${esc(r.code || r.platform_id || "—")}</span></span>
+              ${g.language ? `<span>Speaks ${esc(String(g.language).toUpperCase())}${r.conversation_language ? ` (${esc(r.conversation_language)})` : ""}</span>` : ""}
+              <span>Booked ${esc(fmtDate(r.booking_date, { day: "numeric", month: "short" }))}</span>
+            </div>
+            ${r.notes ? `<div class="notes"><b>Notes:</b> ${esc(r.notes)}</div>` : ""}
+          </div>
+          <div class="contact">${phoneLinks(g)}</div>
+        </div>
+      </article>`;
+  }
+
+  function gapRow(prev, next) {
+    const a = new Date(prev.check_out), b = new Date(next.check_in);
+    const hours = Math.round((b - a) / 36e5);
+    if (hours < 0) return "";
+    const days = Math.floor(hours / 24);
+    const tight = hours <= 6;
+    const txt = days >= 1 ? `${plural(days, "night")} empty before next arrival` : `Same-day turnover · ${hours}h to clean`;
+    return `<div class="gap ${tight ? "tight" : ""}">${esc(txt)}</div>`;
+  }
+
+  // ---- Render --------------------------------------------------------------
+  function render(data, fetchedAt) {
+    const showAll = $("showAll").checked;
+    const now = new Date();
+    const todayKey = dayKey(now);
+    $("today").textContent = "Today is " + new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(now);
+    const prop = data.property;
+    if (prop) {
+      $("propLabel").textContent = `${prop.name} · ${[prop.address?.number?.trim(), prop.address?.street].filter(Boolean).join(", ")}`;
+      $("ciTime").textContent = prop.checkin || "16:00";
+      $("coTime").textContent = prop.checkout || "11:00";
+    }
+    let rs = data.reservations.slice().sort((a, b) => new Date(a.check_in) - new Date(b.check_in));
+    if (!showAll) rs = rs.filter(isLive);
+
+    const inhouse = [], upcoming = [], past = [];
+    for (const r of rs) {
+      const ci = new Date(r.check_in), co = new Date(r.check_out);
+      const ciKey = dayKey(ci), coKey = dayKey(co);
+      if (isLive(r) && ciKey <= todayKey && coKey >= todayKey) inhouse.push(r);
+      else if (ciKey > todayKey) upcoming.push(r);
+      else if (coKey < todayKey) past.push(r);
+      else upcoming.push(r); // non-live within window
+    }
+    past.reverse();
+
+    // Stats
+    const live = rs.filter(isLive);
+    const arriving = live.filter(r => dayKey(new Date(r.check_in)) === todayKey);
+    const departing = live.filter(r => dayKey(new Date(r.check_out)) === todayKey);
+    const nextArrival = live.find(r => dayKey(new Date(r.check_in)) > todayKey);
+    const nameOf = (r) => [r.guest?.first_name, r.guest?.last_name].filter(Boolean).join(" ") || "Guest";
+    const n30 = live.filter(r => { const k = dayKey(new Date(r.check_in)); return k > todayKey && new Date(r.check_in) <= addDays(now, 30); }).length;
+    $("stats").innerHTML = `
+      <div class="stat arrive"><div class="label">Arriving today</div><div class="val">${arriving.length}</div><div class="who">${esc(arriving.map(nameOf).join(", ") || "Nobody arriving")}</div></div>
+      <div class="stat depart"><div class="label">Leaving today</div><div class="val">${departing.length}</div><div class="who">${esc(departing.map(nameOf).join(", ") || "Nobody leaving")}</div></div>
+      <div class="stat inhouse"><div class="label">In house</div><div class="val">${inhouse.length ? inhouse.reduce((s, r) => s + (r.guests?.total || 0), 0) : 0} <small>guests</small></div><div class="who">${esc(inhouse.map(nameOf).join(", ") || "Apartment empty")}</div></div>
+      <div class="stat"><div class="label">Next arrival</div><div class="val">${nextArrival ? esc(fmtDate(nextArrival.check_in, { day: "numeric", month: "short" })) : "—"}</div><div class="who">${nextArrival ? esc(nameOf(nextArrival)) + ` · ${plural(n30, "arrival")} in next 30 days` : "Nothing booked ahead"}</div></div>`;
+
+    const fill = (id, list, cls, gaps) => {
+      const el = $(id);
+      if (!list.length) { el.innerHTML = `<div class="empty">${id === "inhouse" ? "No guests in the apartment right now." : id === "upcoming" ? "No upcoming stays in the next " + DAYS_AHEAD + " days." : "No past stays in the last " + DAYS_BACK + " days."}</div>`; return; }
+      let html = "";
+      let prevLive = id === "upcoming" ? inhouse[inhouse.length - 1] : null;
+      list.forEach((r, i) => {
+        if (gaps && prevLive && isLive(r)) html += gapRow(prevLive, r);
+        html += stayCard(r, todayKey, cls, id === "inhouse" || (id === "upcoming" && i === 0));
+        if (isLive(r)) prevLive = r;
+      });
+      el.innerHTML = html;
+    };
+    fill("inhouse", inhouse, "s-inhouse");
+    fill("upcoming", upcoming, "s-upcoming", true);
+    fill("past", past, "s-past");
+    $("cInhouse").textContent = inhouse.length;
+    $("cUpcoming").textContent = upcoming.length;
+    $("cPast").textContent = past.length;
+
+    if (fetchedAt) {
+      const age = Math.round((Date.now() - fetchedAt) / 60000);
+      $("fresh").textContent = age < 1 ? "Updated just now" : age < 180 ? `Updated ${age} min ago` : "Updated " + new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(fetchedAt));
+    }
+  }
+
+  // ---- Fetch ---------------------------------------------------------------
+  let current = null, fetchedAt = null;
+
+  async function fetchBoard() {
+    let pass = ""; try { pass = localStorage.getItem(PASS_KEY) || ""; } catch (e) {}
+    const res = await fetch("/api/data", { headers: pass ? { "x-board-password": pass } : {} });
+    if (res.status === 401) {
+      const entered = prompt("Enter the guest board password");
+      if (entered == null) { const err = new Error("password"); err.status = 401; throw err; }
+      try { localStorage.setItem(PASS_KEY, entered); } catch (e) {}
+      return fetchBoard();
+    }
+    if (!res.ok) {
+      let msg = `server returned ${res.status}`;
+      try { msg = (await res.json()).error || msg; } catch (e) {}
+      const err = new Error(msg); err.status = res.status; throw err;
+    }
+    return res.json();
+  }
+
+  async function load() {
+    const btn = $("refresh");
+    btn.disabled = true; $("fresh").textContent = "Refreshing…";
+    try {
+      current = await fetchBoard();
+      fetchedAt = Date.now();
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: current, fetchedAt })); } catch (e) {}
+      $("notice").hidden = true;
+      render(current, fetchedAt);
+    } catch (e) {
+      const n = $("notice");
+      n.hidden = false; n.className = "notice bad";
+      n.textContent = e.status === 401
+        ? "This board needs the team password. Reload the page to try again."
+        : `Couldn't load bookings (${e.message}). ${current ? "Showing the last copy that loaded." : "Check your connection and press Refresh."}`;
+      if (current) render(current, fetchedAt); else $("fresh").textContent = "Not loaded";
+    } finally { btn.disabled = false; }
+  }
+
+  // Snapshot or cached copy first so the board is never blank, then live if this copy can reach Hospitable.
+  if (SNAPSHOT) { current = { property: SNAPSHOT.property, reservations: SNAPSHOT.reservations }; fetchedAt = SNAPSHOT.fetchedAt; }
+  try {
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    if (c && c.data && (!fetchedAt || c.fetchedAt > fetchedAt)) { current = c.data; fetchedAt = c.fetchedAt; }
+  } catch (e) {}
+  if (current) render(current, fetchedAt);
+  $("showAll").addEventListener("change", () => current && render(current, fetchedAt));
+  if (TOKEN) {
+    $("refresh").addEventListener("click", load);
+    load();
+    setInterval(load, 10 * 60 * 1000);
+  } else {
+    $("refresh").hidden = true;
+    const n = $("notice"); n.hidden = false; n.className = "notice";
+    n.textContent = "This is a snapshot from " + new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(fetchedAt)) + ". Ask Luca to refresh it for the latest bookings.";
+  }
+})();
+</script>
+
+</body>
+</html>

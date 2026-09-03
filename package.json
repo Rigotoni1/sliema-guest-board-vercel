@@ -1,0 +1,6 @@
+{
+  "name": "sliema-guest-board",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" }
+}
